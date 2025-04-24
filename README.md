@@ -1,6 +1,6 @@
 # Smart Battery Manager
 
-The `SmartBatteryManager` is an AppDaemon app designed to optimize battery charging by leveraging solar production forecasts, electricity price data, and user-defined parameters. It schedules charging tasks to minimize costs and maximize the use of renewable energy.
+The `SmartBatteryManager` is an AppDaemon app for Home Assistant, designed to optimize battery charging by leveraging solar production forecasts, electricity price data, and user-defined parameters. It schedules charging tasks to minimize costs and maximize the use of renewable energy.
 
 ## Features
 
@@ -14,12 +14,13 @@ The `SmartBatteryManager` is an AppDaemon app designed to optimize battery charg
 
 To use this app, ensure the following dependencies are installed and configured:
 
-1. **[AppDaemon](https://appdaemon.readthedocs.io/en/latest/)**: A Python-based automation framework for Home Assistant.
-2. **[HACS (Home Assistant Community Store)](https://hacs.xyz/)**: A custom component manager for Home Assistant.
-3. **[Huawei Solar (HACS)](https://github.com/wlcrs/huawei_solar)**: Integration for Huawei solar inverters to retrieve solar production data.
-4. **[Forecast.Solar](https://forecast.solar/)**: A solar production forecasting service.
-5. **[Tibber](https://developer.tibber.com/)**: Integration for electricity price data.
-6. **[RESTful Integration](https://www.home-assistant.io/integrations/rest/)**: Used to retrieve additional data if needed.
+1. **[HomeAssistant](https://www.home-assistant.io/)**: Open-source home automation solution.
+2. **[AppDaemon](https://appdaemon.readthedocs.io/en/latest/)**: A Python-based automation framework for Home Assistant.
+3. **[HACS (Home Assistant Community Store)](https://hacs.xyz/)**: A custom component manager for Home Assistant.
+4. **[Huawei Solar (HACS)](https://github.com/wlcrs/huawei_solar)**: Integration for Huawei solar inverters to retrieve solar production data.
+5. **[Forecast.Solar](https://forecast.solar/)**: A solar production forecasting service.
+6. **[Tibber](https://developer.tibber.com/)**: Integration for electricity price data.
+7. **[RESTful Integration](https://www.home-assistant.io/integrations/rest/)**: Used to retrieve additional data if needed.
 
 ## Installation
 
