@@ -10,6 +10,22 @@ The `SmartBatteryManager` is an AppDaemon app for Home Assistant, designed to op
 - **Dynamic Scheduling**: Adjusts charging plans hourly based on updated forecasts and price data.
 - **Customizable Parameters**: Allows users to configure battery capacity, target SoC, charging power, and duration.
 
+## How it works
+
+The `SmartBatteryManager` operates by continuously monitoring and analyzing data from various sources to optimize battery charging. Here's a step-by-step breakdown of its functionality:
+
+1. **State of Charge (SoC) Monitoring**: The app retrieves the current battery SoC from the configured sensor (`soc_sensor`). This value is used to determine how much energy is needed to reach the target SoC.
+
+2. **Solar Production Forecast**: Using data from the `Forecast.Solar` service, the app predicts the amount of solar energy expected to be available in the coming hours. This helps prioritize charging during periods of high solar production.
+
+3. **Electricity Price Analysis**: The app fetches electricity price data from the `Tibber` integration (`tibber_sensor`). It identifies low-cost periods to schedule grid charging when solar energy is insufficient.
+
+4. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
+
+5. **Customizable Parameters**: Users can configure parameters such as battery capacity, target SoC, charging power, and duration. These settings allow the app to adapt to different battery systems and user preferences.
+
+6. **Hourly Updates**: The app recalculates the charging plan every hour, incorporating the latest data to ensure the schedule remains efficient and up-to-date.
+
 ## Dependencies
 
 To use this app, ensure the following dependencies are installed and configured:
