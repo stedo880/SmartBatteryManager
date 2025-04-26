@@ -44,7 +44,7 @@ To use this app, ensure the following dependencies are installed and configured:
 
 1. Install the required dependencies listed above.
 2. Place the `smart_battery.py` file in your AppDaemon `apps` directory.
-3. Add the following configuration to your `apps.yaml` file:
+3. Add the following configuration to your `apps.yaml` file, change any values to match your own setup:
 
 ```yaml
   smart_battery:
