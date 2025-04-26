@@ -28,8 +28,13 @@ class SmartBatteryManager(hass.Hass):
 
             # Get battery capacity and target SoC from arguments
             battery_capacity = self.args.get("battery_capacity_kwh", 10)
-            target_soc = self.args.get("target_soc", 1.0)
-
+            soc_targets = self.args.get("soc_targets")
+            if not soc_targets or len(soc_targets) != 24:
+                self.log("Invalid or missing SoC target array, using default 90%")
+                target_soc = 0.9
+            else:
+                target_soc = soc_targets[next_hour.hour]
+           
             # Estimate solar production for next hour
             solar_1 = self.get_state("sensor.energy_next_hour")
             solar_2 = self.get_state("sensor.energy_next_hour_2")

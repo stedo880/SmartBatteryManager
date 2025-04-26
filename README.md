@@ -8,7 +8,7 @@ The `SmartBatteryManager` is an AppDaemon app for Home Assistant, designed to op
 - **Solar Production Forecast Integration**: Uses solar production forecasts to avoid unnecessary grid charging.
 - **Electricity Price Optimization**: Analyzes electricity price data to schedule charging during low-cost periods.
 - **Dynamic Scheduling**: Adjusts charging plans hourly based on updated forecasts and price data.
-- **Customizable Parameters**: Allows users to configure battery capacity, target SoC, charging power, and duration.
+- **Customizable Parameters**: Allows users to configure battery capacity, target SoC per hour, charging power, and duration.
 
 ## How it works
 
@@ -16,15 +16,17 @@ The `SmartBatteryManager` operates by continuously monitoring and analyzing data
 
 1. **State of Charge (SoC) Monitoring**: The app retrieves the current battery SoC from the configured sensor (`soc_sensor`). This value is used to determine how much energy is needed to reach the target SoC.
 
-2. **Solar Production Forecast**: Using data from the `Forecast.Solar` service, the app predicts the amount of solar energy expected to be available in the coming hours. This helps prioritize charging during periods of high solar production.
+2. **Hourly SoC Targets**: Users can define a 24-hour array of target SoC values (`soc_targets`) in the configuration. The app uses the target for the next hour to determine the desired SoC level. If no valid `soc_targets` array is provided, a default target of 90% is used.
 
-3. **Electricity Price Analysis**: The app fetches electricity price data from the `Tibber` integration (`tibber_sensor`). It identifies low-cost periods to schedule grid charging when solar energy is insufficient.
+3. **Solar Production Forecast**: Using data from the `Forecast.Solar` service, the app predicts the amount of solar energy expected to be available in the coming hours. This helps prioritize charging during periods of high solar production.
 
-4. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
+4. **Electricity Price Analysis**: The app fetches electricity price data from the `Tibber` integration (`tibber_sensor`). It identifies low-cost periods to schedule grid charging when solar energy is insufficient.
 
-5. **Customizable Parameters**: Users can configure parameters such as battery capacity, target SoC, charging power, and duration. These settings allow the app to adapt to different battery systems and user preferences.
+5. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
 
-6. **Hourly Updates**: The app recalculates the charging plan every hour, incorporating the latest data to ensure the schedule remains efficient and up-to-date.
+6. **Customizable Parameters**: Users can configure parameters such as battery capacity, target SoC, charging power, and duration. These settings allow the app to adapt to different battery systems and user preferences.
+
+7. **Hourly Updates**: The app recalculates the charging plan every hour, incorporating the latest data to ensure the schedule remains efficient and up-to-date.
 
 ## Dependencies
 
@@ -45,12 +47,36 @@ To use this app, ensure the following dependencies are installed and configured:
 3. Add the following configuration to your `apps.yaml` file:
 
    ```yaml
-   smart_battery:
-     module: smart_battery
-     class: SmartBatteryManager
-     soc_sensor: sensor.batteries_state_of_capacity
-     tibber_sensor: sensor.tibber_electricity_prices
-     battery_capacity_kwh: 10
-     target_soc: 1.0
-     charge_duration_minutes: 60
-     charge_power_w: 3000
+  smart_battery:
+    module: smart_battery
+    class: SmartBatteryManager
+    soc_sensor: sensor.batteries_state_of_capacity
+    tibber_sensor: sensor.tibber_electricity_prices
+    battery_capacity_kwh: 10
+    charge_duration_minutes: 60
+    charge_power_w: 3000
+    soc_targets:
+      - 0.50  # 00:00
+      - 0.50  # 01:00
+      - 0.50  # 02:00
+      - 0.50  # 03:00
+      - 0.50  # 04:00
+      - 0.50  # 05:00
+      - 0.50  # 06:00
+      - 1.00  # 07:00
+      - 1.00  # 08:00
+      - 1.00  # 09:00
+      - 1.00  # 10:00
+      - 1.00  # 11:00
+      - 1.00  # 12:00
+      - 1.00  # 13:00
+      - 1.00  # 14:00
+      - 1.00  # 15:00
+      - 1.00  # 16:00
+      - 1.00  # 17:00
+      - 1.00  # 18:00
+      - 1.00  # 19:00
+      - 1.00  # 20:00
+      - 1.00  # 21:00
+      - 1.00  # 22:00
+      - 1.00  # 23:00
