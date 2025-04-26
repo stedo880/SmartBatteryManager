@@ -30,11 +30,12 @@ class SmartBatteryManager(hass.Hass):
             battery_capacity = self.args.get("battery_capacity_kwh", 10)
             soc_targets = self.args.get("soc_targets")
             if not soc_targets or len(soc_targets) != 24:
-                self.log("Invalid or missing SoC target array, using default 90%")
+                self.log("Invalid or missing battery SoC target array, using default 90%")
                 target_soc = 0.9
             else:
                 target_soc = soc_targets[next_hour.hour]
-           
+                self.log(f"Selected target battery SoC for hour {next_hour.hour}: {target_soc * 100:.0f}%")
+                           
             # Estimate solar production for next hour
             solar_1 = self.get_state("sensor.energy_next_hour")
             solar_2 = self.get_state("sensor.energy_next_hour_2")
@@ -45,7 +46,7 @@ class SmartBatteryManager(hass.Hass):
                 self.log("No additional energy needed, skipping charging plan.")
                 return
             
-            self.log(f"SoC: {soc*100:.1f}%, energy needed from grid: {energy_needed:.2f} kWh")
+            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
 
             # Check if solar production data is available
             try:
