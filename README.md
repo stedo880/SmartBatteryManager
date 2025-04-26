@@ -46,7 +46,7 @@ To use this app, ensure the following dependencies are installed and configured:
 2. Place the `smart_battery.py` file in your AppDaemon `apps` directory.
 3. Add the following configuration to your `apps.yaml` file:
 
-   ```yaml
+```yaml
   smart_battery:
     module: smart_battery
     class: SmartBatteryManager
@@ -56,13 +56,13 @@ To use this app, ensure the following dependencies are installed and configured:
     charge_duration_minutes: 60
     charge_power_w: 3000
     soc_targets:
-      - 0.50  # 00:00
-      - 0.50  # 01:00
-      - 0.50  # 02:00
-      - 0.50  # 03:00
-      - 0.50  # 04:00
-      - 0.50  # 05:00
-      - 0.50  # 06:00
+      - 1.00  # 00:00
+      - 1.00  # 01:00
+      - 1.00  # 02:00
+      - 1.00  # 03:00
+      - 1.00  # 04:00
+      - 1.00  # 05:00
+      - 1.00  # 06:00
       - 1.00  # 07:00
       - 1.00  # 08:00
       - 1.00  # 09:00
