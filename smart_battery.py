@@ -120,10 +120,10 @@ class SmartBatteryManager(hass.Hass):
                     continue
 
                 # Look left
-                j = i - 1
-                while j >= 0 and all_prices[j][1] <= min_price + 0.10:
-                    candidate_hours.add(all_prices[j][0])
-                    j -= 1
+                # j = i - 1
+                # while j >= 0 and all_prices[j][1] <= min_price + 0.10:
+                #     candidate_hours.add(all_prices[j][0])
+                #     j -= 1
 
                 # Look right
                 j = i + 1
