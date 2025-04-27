@@ -128,8 +128,8 @@ class SmartBatteryManager(hass.Hass):
             candidate_hours = sorted(candidate_hours)
             self.log(f"Candidate hours: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in candidate_hours)}")
 
-            # Check if the next hour is a candidate for charging
-            if next_interval in [t for t in candidate_hours if t >= now]:
+            # Check if the next interval is a candidate for charging
+            if next_interval.hour in [t for t in candidate_hours if t >= now]:
                 self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
                 self.schedule_charge(next_interval)
             else:
