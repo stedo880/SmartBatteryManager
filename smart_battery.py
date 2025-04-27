@@ -85,13 +85,19 @@ class SmartBatteryManager(hass.Hass):
             ]
             all_prices.sort(key=lambda x: x[0])
 
-            # Identify price data local minimas
+            prices = [p for (_, p) in all_prices]
+            smoothed = []
+            window = 3  # 3×1 hour smoothing
+            for i in range(len(prices)):
+                lo = max(0, i - window//2)
+                hi = min(len(prices), i + window//2 + 1)
+                smoothed.append(sum(prices[lo:hi]) / (hi - lo))
+
+            # Identify local minima on the smoothed series
             local_minima = []
-            for i in range(1, len(all_prices) - 1):
-                prev_price = all_prices[i - 1][1]
-                curr_price = all_prices[i][1]
-                next_price = all_prices[i + 1][1]
-                if curr_price < prev_price and curr_price < next_price:
+            for i in range(1, len(smoothed) - 1):
+                if smoothed[i] < smoothed[i-1] and smoothed[i] < smoothed[i+1]:
+                    # map back to the real timestamp
                     local_minima.append(all_prices[i][0])
 
             self.log(f"Detected local minima: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in local_minima)}")
