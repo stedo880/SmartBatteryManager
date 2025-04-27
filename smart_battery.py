@@ -46,12 +46,11 @@ class SmartBatteryManager(hass.Hass):
             solar_2 = self.get_state("sensor.energy_next_hour_2")
 
             # Check if the battery is already full
+            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
             energy_needed = max(0, (target_soc - soc) * battery_capacity)
             if energy_needed <= 0:
                 self.log("No additional energy needed, skipping charging plan.")
-                return
-            
-            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
+                return         
 
             # Check if solar production data is available
             try:
@@ -131,10 +130,10 @@ class SmartBatteryManager(hass.Hass):
 
             # Check if the next hour is a candidate for charging
             if next_interval in [t for t in candidate_hours if t >= now]:
-                self.log(f"Next charging hour scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
+                self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
                 self.schedule_charge(next_interval)
             else:
-                self.log("Next hour is not a candidate for charging.")
+                self.log("Next interval is not a candidate for charging.")
 
         except Exception as e:
             self.log(f"Error during planning: {str(e)}")
