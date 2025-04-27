@@ -46,8 +46,8 @@ class SmartBatteryManager(hass.Hass):
             solar_2 = self.get_state("sensor.energy_next_hour_2")
 
             # Check if the battery is already full
-            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
             energy_needed = max(0, (target_soc - soc) * battery_capacity)
+            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
             if energy_needed <= 0:
                 self.log("No additional energy needed, skipping charging plan.")
                 return         
