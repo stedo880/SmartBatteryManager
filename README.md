@@ -23,11 +23,15 @@ The `SmartBatteryManager` operates by continuously monitoring and analyzing data
 
 4. **Electricity Price Analysis**: The app fetches electricity price data from the `Tibber` integration (`tibber_sensor`). It identifies low-cost periods to schedule grid charging when solar energy is insufficient.
 
-5. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
+5. **Smoothing and Local Minima Detection**: The app applies a 3-hour smoothing window to electricity price data to reduce noise and identify trends. Local minima in the smoothed price data are detected to pinpoint the most cost-effective charging times.
 
-6. **15-Minute Updates**: The app recalculates the charging plan every 15 minutes at `HH:59`, `HH:14`, `HH:29`, and `HH:44`. This ensures that the schedule remains efficient and up-to-date.
+6. **Left-Right Seek for Adjacent Low Prices**: After identifying local minima, the app extends the candidate charging hours by seeking adjacent time periods where the price is within a threshold (`+0.10`) of the minimum price. This ensures that slightly higher but still cost-effective periods are included in the charging plan.
 
-7. **Charging Duration**: Charging sessions are scheduled to start at the next 15-minute interval (`HH:00`, `HH:15`, `HH:30`, `HH:45`) and last for 15 minutes.
+7. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
+
+8. **15-Minute Updates**: The app recalculates the charging plan every 15 minutes at `HH:59`, `HH:14`, `HH:29`, and `HH:44`. This ensures that the schedule remains efficient and up-to-date.
+
+9. **Charging Duration**: Charging sessions are scheduled to start at the next 15-minute interval (`HH:00`, `HH:15`, `HH:30`, `HH:45`) and last for 15 minutes.
 
 ## Dependencies
 
