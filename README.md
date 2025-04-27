@@ -7,8 +7,9 @@ The `SmartBatteryManager` is an AppDaemon app for Home Assistant, designed to op
 - **Battery SoC Monitoring**: Tracks the current battery state of charge (SoC) to determine energy needs.
 - **Solar Production Forecast Integration**: Uses solar production forecasts to avoid unnecessary grid charging.
 - **Electricity Price Optimization**: Analyzes electricity price data to schedule charging during low-cost periods.
-- **Dynamic Scheduling**: Adjusts charging plans hourly based on updated forecasts and price data.
+- **Dynamic Scheduling**: Adjusts charging plans every 15 minutes based on updated forecasts and price data.
 - **Customizable Parameters**: Allows users to configure battery capacity, target SoC per hour, charging power, and duration.
+- **15-Minute Updates**: The app recalculates the charging plan every 15 minutes, ensuring timely adjustments to the schedule.
 
 ## How it works
 
@@ -24,9 +25,9 @@ The `SmartBatteryManager` operates by continuously monitoring and analyzing data
 
 5. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
 
-6. **Customizable Parameters**: Users can configure parameters such as battery capacity, target SoC, charging power, and duration. These settings allow the app to adapt to different battery systems and user preferences.
+6. **15-Minute Updates**: The app recalculates the charging plan every 15 minutes at `HH:59`, `HH:14`, `HH:29`, and `HH:44`. This ensures that the schedule remains efficient and up-to-date.
 
-7. **Hourly Updates**: The app recalculates the charging plan every hour, incorporating the latest data to ensure the schedule remains efficient and up-to-date.
+7. **Charging Duration**: Charging sessions are scheduled to start at the next 15-minute interval (`HH:00`, `HH:15`, `HH:30`, `HH:45`) and last for 15 minutes.
 
 ## Dependencies
 
@@ -47,36 +48,37 @@ To use this app, ensure the following dependencies are installed and configured:
 3. Add the following configuration to your `apps.yaml` file, change any values to match your own setup:
 
 ```yaml
-  smart_battery:
-    module: smart_battery
-    class: SmartBatteryManager
-    soc_sensor: sensor.batteries_state_of_capacity
-    tibber_sensor: sensor.tibber_electricity_prices
-    battery_capacity_kwh: 10
-    charge_duration_minutes: 60
-    charge_power_w: 3000
-    soc_targets:
-      - 1.00  # 00:00
-      - 1.00  # 01:00
-      - 1.00  # 02:00
-      - 1.00  # 03:00
-      - 1.00  # 04:00
-      - 1.00  # 05:00
-      - 1.00  # 06:00
-      - 1.00  # 07:00
-      - 1.00  # 08:00
-      - 1.00  # 09:00
-      - 1.00  # 10:00
-      - 1.00  # 11:00
-      - 1.00  # 12:00
-      - 1.00  # 13:00
-      - 1.00  # 14:00
-      - 1.00  # 15:00
-      - 1.00  # 16:00
-      - 1.00  # 17:00
-      - 1.00  # 18:00
-      - 1.00  # 19:00
-      - 1.00  # 20:00
-      - 1.00  # 21:00
-      - 1.00  # 22:00
-      - 1.00  # 23:00
+smart_battery:
+  module: smart_battery
+  class: SmartBatteryManager
+  soc_sensor: sensor.batteries_state_of_capacity
+  tibber_sensor: sensor.tibber_electricity_prices
+  battery_capacity_kwh: 10
+  charge_duration_minutes: 15
+  charge_power_w: 3000
+  soc_targets:
+    - 0.50  # 00:00
+    - 0.50  # 01:00
+    - 0.50  # 02:00
+    - 0.50  # 03:00
+    - 0.50  # 04:00
+    - 0.50  # 05:00
+    - 0.50  # 06:00
+    - 1.00  # 07:00
+    - 1.00  # 08:00
+    - 1.00  # 09:00
+    - 1.00  # 10:00
+    - 1.00  # 11:00
+    - 1.00  # 12:00
+    - 1.00  # 13:00
+    - 1.00  # 14:00
+    - 1.00  # 15:00
+    - 1.00  # 16:00
+    - 1.00  # 17:00
+    - 0.50  # 18:00
+    - 0.50  # 19:00
+    - 0.50  # 20:00
+    - 0.50  # 21:00
+    - 0.50  # 22:00
+    - 0.50  # 23:00
+```

@@ -7,17 +7,22 @@ class SmartBatteryManager(hass.Hass):
 
     def initialize(self):
         self.log("Smart battery manager initializing...")
-        run_time = datetime.now().replace(minute=55, second=0, microsecond=0)
-        if run_time < datetime.now():
-            run_time += timedelta(hours=1)
-        self.run_every(self.plan_charging_strategy, run_time, 3600)  # Run every hour at HH:55
-        self.run_in(self.plan_charging_strategy, 5)
+        # Schedule `plan_charging_strategy` to run every 15 minutes at HH:59, HH:14, HH:29, HH:44
+        now = datetime.now()
+        first_run = now.replace(second=0, microsecond=0)
+        if now.minute % 15 == 14:
+            first_run = first_run.replace(minute=now.minute)
+        else:
+            first_run = first_run.replace(minute=(now.minute // 15) * 15 + 14)
+        if first_run < now:
+            first_run += timedelta(minutes=15)
+        self.run_every(self.plan_charging_strategy, first_run, 900)  # 900 seconds = 15 minutes
 
     def plan_charging_strategy(self, kwargs):
         try:
-            # Get the next hour for planning
+            # Get the next 15-minute interval for planning
             now = datetime.now()
-            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            next_interval = now.replace(second=0, microsecond=0) + timedelta(minutes=15 - now.minute % 15)
 
             # Get the current state of the battery SoC
             soc_raw = self.get_state(self.args["soc_sensor"])
@@ -33,8 +38,8 @@ class SmartBatteryManager(hass.Hass):
                 self.log("Invalid or missing battery SoC target array, using default 90%")
                 target_soc = 0.9
             else:
-                target_soc = soc_targets[next_hour.hour]
-                self.log(f"Selected target battery SoC for hour {next_hour.hour}: {target_soc * 100:.0f}%")
+                target_soc = soc_targets[next_interval.hour]
+                self.log(f"Selected target battery SoC for hour {next_interval.hour}: {target_soc * 100:.0f}%")
                            
             # Estimate solar production for next hour
             solar_1 = self.get_state("sensor.energy_next_hour")
@@ -60,7 +65,7 @@ class SmartBatteryManager(hass.Hass):
             # Check if the expected solar production is enough to reach the target SoC
             projected_soc = soc + (solar_next_hour / battery_capacity)
             if projected_soc >= target_soc:
-                self.log(f"Skipping charge at {next_hour.strftime('%H:%M')} - expected solar enough to reach SoC target.")
+                self.log(f"Skipping charge at {next_interval.strftime('%H:%M')} - expected solar enough to reach SoC target.")
                 return
 
             # Check price data from Tibber
@@ -125,9 +130,9 @@ class SmartBatteryManager(hass.Hass):
             self.log(f"Candidate hours: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in candidate_hours)}")
 
             # Check if the next hour is a candidate for charging
-            if next_hour in [t for t in candidate_hours if t >= now]:
-                self.log(f"Next charging hour scheduled: {next_hour.strftime('%Y-%m-%d %H:%M')}")
-                self.schedule_charge(next_hour)
+            if next_interval in [t for t in candidate_hours if t >= now]:
+                self.log(f"Next charging hour scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
+                self.schedule_charge(next_interval)
             else:
                 self.log("Next hour is not a candidate for charging.")
 
@@ -139,14 +144,15 @@ class SmartBatteryManager(hass.Hass):
         target = target_time.replace(second=0, microsecond=0)
         if target < now:
             return
-        self.run_at(self.start_charging, target, hour=target.hour)
+        self.run_at(self.start_charging, target, hour=target.hour, minute=target.minute)
 
     def start_charging(self, kwargs):
         hour = kwargs.get("hour")
-        duration = self.args.get("charge_duration_minutes", 60)
+        minute = kwargs.get("minute")
+        duration = self.args("duration_minutes", 15)  # Default to 60 minutes if not specified
         power = self.args.get("charge_power_w", 3000)
 
-        self.log(f"Starting CHARGE at hour {hour:02d}:00 for {duration} minutes at {power}W")
+        self.log(f"Starting CHARGE at {hour:02d}:{minute:02d} for {duration} minutes at {power}W")
 
         self.call_service("script/turn_on", entity_id="script.force_battery_charge", variables={
             "duration": duration,
