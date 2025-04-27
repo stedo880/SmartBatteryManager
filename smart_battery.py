@@ -114,20 +114,20 @@ class SmartBatteryManager(hass.Hass):
                 cheapest_three = sorted(window, key=lambda x: x[1])[:3]
                 candidate_hours.update(t[0] for t in cheapest_three)
 
-                # Extend to all adjacent within 10% and 20% of the minimum price
+                # Extend to all adjacent within +0.1 the minimum price
                 i = next((idx for idx, (t, _) in enumerate(all_prices) if t == minimum), None)
                 if i is None:
                     continue
 
                 # Look left
                 j = i - 1
-                while j >= 0 and all_prices[j][1] <= min_price * 1.10:
+                while j >= 0 and all_prices[j][1] <= min_price + 0.10:
                     candidate_hours.add(all_prices[j][0])
                     j -= 1
 
                 # Look right
                 j = i + 1
-                while j < len(all_prices) and all_prices[j][1] <= min_price * 1.20:
+                while j < len(all_prices) and all_prices[j][1] <= min_price + 0.10:
                     candidate_hours.add(all_prices[j][0])
                     j += 1
 
