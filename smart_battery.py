@@ -149,7 +149,7 @@ class SmartBatteryManager(hass.Hass):
     def start_charging(self, kwargs):
         hour = kwargs.get("hour")
         minute = kwargs.get("minute")
-        duration = self.args("duration_minutes", 15)  # Default to 60 minutes if not specified
+        duration = self.args.get("duration_minutes", 15)  # Default to 15 minutes if not specified
         power = self.args.get("charge_power_w", 3000)
 
         self.log(f"Starting CHARGE at {hour:02d}:{minute:02d} for {duration} minutes at {power}W")
