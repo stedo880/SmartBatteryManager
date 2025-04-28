@@ -57,6 +57,8 @@ smart_battery:
   class: SmartBatteryManager
   soc_sensor: sensor.batteries_state_of_capacity
   tibber_sensor: sensor.tibber_electricity_prices
+  energy_next_hour_sensor_1: sensor.energy_next_hour
+  energy_next_hour_sensor_2: sensor.energy_next_hour_2
   battery_capacity_kwh: 10
   charge_duration_minutes: 15
   charge_power_w: 3000
