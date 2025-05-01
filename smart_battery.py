@@ -40,12 +40,12 @@ class SmartBatteryManager(hass.Hass):
                 target_soc = soc_targets[next_interval.hour]
                 self.log(f"Selected target battery SoC for hour {next_interval.hour}: {target_soc * 100:.0f}%")
                            
-            # Check if the battery is already full
+            # Check if the battery is already at target SoC
             energy_needed = max(0, (target_soc - soc) * battery_capacity)
             self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
             if energy_needed <= 0:
                 self.log("No additional energy needed, skipping charging plan.")
-                return         
+                return
 
             # Get estimated solar production for next hour
             solar_next_hour_1 = self.get_state(self.args["energy_next_hour_sensor_1"])
