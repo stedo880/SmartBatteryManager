@@ -72,10 +72,15 @@ class SmartBatteryManager(hass.Hass):
 
             self.log(f"Expected remaining solar production today: {solar_remaining:.2f} kWh")
 
+            # Check if the expected remaining solar production today is more than double the energy needed
+            if solar_remaining > 2 * energy_needed:
+                self.log("Expected remaining solar production today is more than double the energy needed, skipping charging plan.")
+                return
+
             # Check if the expected solar production is enough to reach the target SoC
             projected_soc = soc + (solar_next_hour / battery_capacity)
             if projected_soc >= target_soc:
-                self.log(f"Skipping charge at {next_interval.strftime('%H:%M')} - expected solar enough to reach SoC target.")
+                self.log(f"Skipping charge at {next_interval.strftime('%H:%M')} - expected solar next hour is enough to reach SoC target.")
                 return
 
             # Check price data from Tibber
