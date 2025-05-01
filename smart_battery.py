@@ -92,7 +92,8 @@ class SmartBatteryManager(hass.Hass):
         self.log(f"Expected solar production next hour: {solar_next_hour:.2f} kWh")
         self.log(f"Expected remaining solar production today: {solar_remaining:.2f} kWh")
    
-        if solar_remaining > 2 * energy_needed:
+        now = datetime.now()
+        if solar_remaining > 2 * energy_needed and now.time() > datetime.strptime("06:00", "%H:%M").time():
             self.log("Skipping charge: Expected remaining solar production today is more than double the energy needed")
             return True
 

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 from smart_battery import SmartBatteryManager
 
@@ -146,3 +146,42 @@ def test_should_skip_due_to_solar_not_skipping(app):
     assert skip is False
     app.log.assert_any_call("Expected solar production next hour: 1.00 kWh")
     app.log.assert_any_call("Expected remaining solar production today: 2.00 kWh")
+
+
+def test_should_skip_due_to_solar_time_check_skipping(app):
+    # Mock solar methods
+    app.get_solar_next_hour = MagicMock(return_value=4.0)
+    app.get_solar_remaining = MagicMock(return_value=10.0)
+
+    # Mock datetime to simulate a time after 06:00
+    with patch("smart_battery.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime(2025, 5, 1, 7, 0)  # 07:00 AM
+        mock_datetime.strptime = datetime.strptime  # Ensure strptime works as expected
+
+        # Test skipping due to solar production and time condition
+        soc = 0.6
+        target_soc = 0.8
+        energy_needed = app.calculate_energy_needed(soc, target_soc)
+        app.args["battery_capacity_kwh"] = 10
+        skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
+        assert skip is True
+        app.log.assert_any_call("Skipping charge: Expected remaining solar production today is more than double the energy needed")
+
+
+def test_should_skip_due_to_solar_time_check_not_skipping(app):
+    # Mock solar methods
+    app.get_solar_next_hour = MagicMock(return_value=1.0)
+    app.get_solar_remaining = MagicMock(return_value=10.0)
+
+    # Mock datetime to simulate a time before 06:00
+    with patch("smart_battery.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime(2025, 5, 1, 5, 0)  # 05:00 AM
+        mock_datetime.strptime = datetime.strptime  # Ensure strptime works as expected
+
+        # Test not skipping due to time condition
+        soc = 0.3
+        target_soc = 0.5
+        energy_needed = app.calculate_energy_needed(soc, target_soc)
+        app.args["battery_capacity_kwh"] = 10
+        skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
+        assert skip is False
