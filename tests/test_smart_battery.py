@@ -115,40 +115,10 @@ def test_get_solar_remaining(app):
     app.get_state.assert_any_call("sensor.solar_remaining_1")
     app.get_state.assert_any_call("sensor.solar_remaining_2")
 
-def test_should_skip_due_to_solar_skipping(app):
-    # Mock solar methods
-    app.get_solar_next_hour = MagicMock(return_value=4.0)
-    app.get_solar_remaining = MagicMock(return_value=10.0)
-
-    # Test skipping due to solar production
-    soc = 0.6
-    target_soc = 0.8
-    energy_needed = app.calculate_energy_needed(soc, target_soc)
-    app.args["battery_capacity_kwh"] = 10
-    skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
-    assert skip is True
-    app.log.assert_any_call("Expected solar production next hour: 4.00 kWh")
-    app.log.assert_any_call("Expected remaining solar production today: 10.00 kWh")
-    app.log.assert_any_call("Skipping charge: Expected remaining solar production today is more than double the energy needed")
-
-
-def test_should_skip_due_to_solar_not_skipping(app):
-    # Mock solar methods
-    app.get_solar_next_hour = MagicMock(return_value=1.0)
-    app.get_solar_remaining = MagicMock(return_value=2.0)
-
-    # Test not skipping due to insufficient solar production
-    soc = 0.4
-    target_soc = 0.8
-    energy_needed = app.calculate_energy_needed(soc, target_soc)
-    app.args["battery_capacity_kwh"] = 10
-    skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
-    assert skip is False
-    app.log.assert_any_call("Expected solar production next hour: 1.00 kWh")
-    app.log.assert_any_call("Expected remaining solar production today: 2.00 kWh")
-
-
-def test_should_skip_due_to_solar_time_check_skipping(app):
+# Test the check_skip_charge method
+# Scenario 1: Enough solar energy available, time is after 06:00
+# Expected to skip charging if solar energy is sufficient
+def test_check_skip_charge_enough_energy(app):
     # Mock solar methods
     app.get_solar_next_hour = MagicMock(return_value=4.0)
     app.get_solar_remaining = MagicMock(return_value=10.0)
@@ -163,15 +133,38 @@ def test_should_skip_due_to_solar_time_check_skipping(app):
         target_soc = 0.8
         energy_needed = app.calculate_energy_needed(soc, target_soc)
         app.args["battery_capacity_kwh"] = 10
-        skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
+        skip = app.check_skip_charge(soc, target_soc, energy_needed)
         assert skip is True
         app.log.assert_any_call("Skipping charge: Expected remaining solar production today is more than double the energy needed")
 
-
-def test_should_skip_due_to_solar_time_check_not_skipping(app):
+# Scenario 2: Not enough solar energy available, time is after 06:00
+# Expected to not skip charging
+def test_check_skip_charge_not_enough_energy(app):
     # Mock solar methods
     app.get_solar_next_hour = MagicMock(return_value=1.0)
-    app.get_solar_remaining = MagicMock(return_value=10.0)
+    app.get_solar_remaining = MagicMock(return_value=2.0)
+
+    # Mock datetime to simulate a time after 06:00
+    with patch("smart_battery.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime(2025, 5, 1, 7, 0)  # 07:00 AM
+        mock_datetime.strptime = datetime.strptime  # Ensure strptime works as expected
+
+        # Test not skipping due to insufficient solar production
+        soc = 0.4
+        target_soc = 0.8
+        energy_needed = app.calculate_energy_needed(soc, target_soc)
+        app.args["battery_capacity_kwh"] = 10
+        skip = app.check_skip_charge(soc, target_soc, energy_needed)
+        assert skip is False
+        app.log.assert_any_call("Expected solar production next hour: 1.00 kWh")
+        app.log.assert_any_call("Expected remaining solar production today: 2.00 kWh")
+
+# Scenario 3: Time is before 06:00, expected solar remaining today is enough
+# Expected to not skip charging
+def test_check_skip_charge_before_time(app):
+    # Mock solar methods
+    app.get_solar_next_hour = MagicMock(return_value=0.0)
+    app.get_solar_remaining = MagicMock(return_value=20.0)
 
     # Mock datetime to simulate a time before 06:00
     with patch("smart_battery.datetime") as mock_datetime:
@@ -179,9 +172,32 @@ def test_should_skip_due_to_solar_time_check_not_skipping(app):
         mock_datetime.strptime = datetime.strptime  # Ensure strptime works as expected
 
         # Test not skipping due to time condition
-        soc = 0.3
-        target_soc = 0.5
+        soc = 0.6
+        target_soc = 0.8
         energy_needed = app.calculate_energy_needed(soc, target_soc)
         app.args["battery_capacity_kwh"] = 10
-        skip = app.should_skip_due_to_solar(soc, target_soc, energy_needed)
+        skip = app.check_skip_charge(soc, target_soc, energy_needed)
         assert skip is False
+        app.log.assert_any_call("Expected solar production next hour: 0.00 kWh")
+        app.log.assert_any_call("Expected remaining solar production today: 20.00 kWh")
+
+# Scenario 4: Projected SOC is enough to reach target SOC
+# Expected to skip charging
+def test_check_skip_charge_projected_soc(app):
+    # Mock solar methods
+    app.get_solar_next_hour = MagicMock(return_value=2.0)
+    app.get_solar_remaining = MagicMock(return_value=3.0)
+
+    # Mock datetime to simulate a time after 06:00
+    with patch("smart_battery.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime(2025, 5, 1, 7, 0)  # 07:00 AM
+        mock_datetime.strptime = datetime.strptime  # Ensure strptime works as expected
+
+        # Test skipping due to projected SOC
+        soc = 0.6
+        target_soc = 0.8
+        energy_needed = app.calculate_energy_needed(soc, target_soc)
+        app.args["battery_capacity_kwh"] = 10
+        skip = app.check_skip_charge(soc, target_soc, energy_needed)
+        assert skip is True
+        app.log.assert_any_call("Skipping charge: Expected solar next hour is enough to reach SoC target")

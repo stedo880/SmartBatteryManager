@@ -32,7 +32,7 @@ class SmartBatteryManager(hass.Hass):
                 self.log("Skipping charge: No additional energy needed")
                 return
 
-            if self.should_skip_due_to_solar(soc, target_soc, energy_needed):
+            if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
             candidate_hours = self.get_candidate_hours()
@@ -85,7 +85,7 @@ class SmartBatteryManager(hass.Hass):
             self.log("Could not parse remaining solar production data, assuming 0 kWh")
             return 0
 
-    def should_skip_due_to_solar(self, soc, target_soc, energy_needed):
+    def check_skip_charge(self, soc, target_soc, energy_needed):
         solar_next_hour = self.get_solar_next_hour()
         solar_remaining = self.get_solar_remaining()
 
