@@ -5,6 +5,8 @@ smart_battery:
   tibber_sensor: sensor.tibber_electricity_prices
   energy_next_hour_sensor_1: sensor.energy_next_hour
   energy_next_hour_sensor_2: sensor.energy_next_hour_2
+  energy_today_remaining_1: sensor.energy_production_today_remaining
+  energy_today_remaining_2: sensor.energy_production_today_remaining_2
   battery_capacity_kwh: 10
   charge_duration_minutes: 15
   charge_power_w: 3000

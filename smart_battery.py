@@ -47,18 +47,30 @@ class SmartBatteryManager(hass.Hass):
                 self.log("No additional energy needed, skipping charging plan.")
                 return         
 
-            # Estimate solar production for next hour
-            solar_1 = self.get_state(self.args["energy_next_hour_sensor_1"])
-            solar_2 = self.get_state(self.args["energy_next_hour_sensor_2"])
-
+            # Get estimated solar production for next hour
+            solar_next_hour_1 = self.get_state(self.args["energy_next_hour_sensor_1"])
+            solar_next_hour_2 = self.get_state(self.args["energy_next_hour_sensor_2"])
+                      
             # Check if solar production data is available
             try:
-                solar_next_hour = float(solar_1 or 0) + float(solar_2 or 0)
+                solar_next_hour = float(solar_next_hour_1 or 0) + float(solar_next_hour_2 or 0)
             except ValueError:
                 self.log("Could not parse solar forecast data, assuming 0 kWh")
                 solar_next_hour = 0
 
             self.log(f"Expected solar production next hour: {solar_next_hour:.2f} kWh")
+
+            # Get estimated remaining solar production for the day
+            solar_remaining_1 = self.get_state(self.args["energy_today_remaining_1"])
+            solar_remaining_2 = self.get_state(self.args["energy_today_remaining_2"])
+            
+            try:
+                solar_remaining = float(solar_remaining_1 or 0) + float(solar_remaining_2 or 0)
+            except ValueError:
+                self.log("Could not parse remaining solar production data, assuming 0 kWh")
+                solar_remaining = 0
+
+            self.log(f"Expected remaining solar production today: {solar_remaining:.2f} kWh")
 
             # Check if the expected solar production is enough to reach the target SoC
             projected_soc = soc + (solar_next_hour / battery_capacity)
