@@ -1,12 +1,12 @@
 import appdaemon.plugins.hass.hassapi as hass
 from datetime import datetime, timedelta
+from typing import Optional, List, Dict, Any
 from dateutil import parser
 
 class SmartBatteryManager(hass.Hass):
 
-    def initialize(self):
+    def initialize(self) -> None:
         self.log("Smart battery manager initializing...")
-        # Schedule `plan_charging_strategy` to run every 15 minutes at HH:59, HH:14, HH:29, HH:44
         now = datetime.now()
         first_run = now.replace(second=0, microsecond=0)
         if now.minute % 15 == 14:
@@ -17,7 +17,7 @@ class SmartBatteryManager(hass.Hass):
             first_run += timedelta(minutes=15)
         self.run_every(self.plan_charging, first_run, 900)  # 900 seconds = 15 minutes
 
-    def plan_charging(self, kwargs):
+    def plan_charging(self, kwargs: Dict[str, Any]) -> None:
         try:
             now = datetime.now()
             next_interval = now.replace(second=0, microsecond=0) + timedelta(minutes=15 - now.minute % 15)
@@ -45,14 +45,14 @@ class SmartBatteryManager(hass.Hass):
         except Exception as e:
             self.log(f"Error during planning: {str(e)}")
 
-    def get_current_soc(self):
+    def get_current_soc(self) -> Optional[float]:
         soc_raw = self.get_state(self.args["soc_sensor"])
         if soc_raw is None or soc_raw in ["unknown", "unavailable"]:
             self.log("Battery SoC sensor returned no data.")
             return None
         return float(soc_raw) / 100
 
-    def get_target_soc(self, next_interval):
+    def get_target_soc(self, next_interval: datetime) -> float:
         soc_targets = self.args.get("soc_targets")
         if not soc_targets or len(soc_targets) != 24:
             self.log("Invalid or missing battery SoC target array, using default 90%")
@@ -61,13 +61,13 @@ class SmartBatteryManager(hass.Hass):
         self.log(f"Selected target battery SoC for hour {next_interval.hour}: {target_soc * 100:.0f}%")
         return target_soc
 
-    def calculate_energy_needed(self, soc, target_soc):
+    def calculate_energy_needed(self, soc: float, target_soc: float) -> float:
         battery_capacity = self.args.get("battery_capacity_kwh", 10)
         energy_needed = max(0, (target_soc - soc) * battery_capacity)
         self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
         return energy_needed
 
-    def get_solar_next_hour(self):
+    def get_solar_next_hour(self) -> float:
         solar_next_hour_1 = self.get_state(self.args["energy_next_hour_sensor_1"])
         solar_next_hour_2 = self.get_state(self.args["energy_next_hour_sensor_2"])
         try:
@@ -76,7 +76,7 @@ class SmartBatteryManager(hass.Hass):
             self.log("Could not parse solar forecast data, assuming 0 kWh")
             return 0
 
-    def get_solar_remaining(self):
+    def get_solar_remaining(self) -> float:
         solar_remaining_1 = self.get_state(self.args["energy_today_remaining_sensor_1"])
         solar_remaining_2 = self.get_state(self.args["energy_today_remaining_sensor_2"])
         try:
@@ -85,7 +85,7 @@ class SmartBatteryManager(hass.Hass):
             self.log("Could not parse remaining solar production data, assuming 0 kWh")
             return 0
 
-    def check_skip_charge(self, soc, target_soc, energy_needed):
+    def check_skip_charge(self, soc: float, target_soc: float, energy_needed: float) -> bool:
         solar_next_hour = self.get_solar_next_hour()
         solar_remaining = self.get_solar_remaining()
 
@@ -104,7 +104,7 @@ class SmartBatteryManager(hass.Hass):
 
         return False
 
-    def get_candidate_hours(self):
+    def get_candidate_hours(self) -> List[datetime]:
         price_data_full = self.get_state(self.args["tibber_sensor"], attribute="all")
         if not price_data_full or "attributes" not in price_data_full:
             self.log("No price data attributes found")
@@ -126,7 +126,7 @@ class SmartBatteryManager(hass.Hass):
         local_minima = self.find_local_minima(smoothed, all_prices)
         return self.build_candidate_hours(local_minima, all_prices)
 
-    def smooth_prices(self, prices):
+    def smooth_prices(self, prices: List[float]) -> List[float]:
         smoothed = []
         window = 3  # 3×1 hour smoothing
         for i in range(len(prices)):
@@ -135,7 +135,7 @@ class SmartBatteryManager(hass.Hass):
             smoothed.append(sum(prices[lo:hi]) / (hi - lo))
         return smoothed
 
-    def find_local_minima(self, smoothed, all_prices):
+    def find_local_minima(self, smoothed: List[float], all_prices: List[tuple]) -> List[datetime]:
         local_minima = []
         for i in range(1, len(smoothed) - 1):
             if smoothed[i] < smoothed[i - 1] and smoothed[i] < smoothed[i + 1]:
@@ -143,7 +143,7 @@ class SmartBatteryManager(hass.Hass):
         self.log(f"Detected local minima: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in local_minima)}")
         return local_minima
 
-    def build_candidate_hours(self, local_minima, all_prices):
+    def build_candidate_hours(self, local_minima: List[datetime], all_prices: List[tuple]) -> List[datetime]:
         candidate_hours = set()
         for minimum in local_minima:
             min_price = next((p for (t, p) in all_prices if t == minimum), None)
@@ -167,17 +167,17 @@ class SmartBatteryManager(hass.Hass):
         self.log(f"Candidate hours: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in candidate_hours)}")
         return candidate_hours
 
-    def is_next_interval_candidate(self, next_interval, candidate_hours):
+    def is_next_interval_candidate(self, next_interval: datetime, candidate_hours: List[datetime]) -> bool:
         return any(t.date() == next_interval.date() and t.hour == next_interval.hour for t in candidate_hours)
 
-    def schedule_charge(self, target_time):
+    def schedule_charge(self, target_time: datetime) -> None:
         now = datetime.now()
         target = target_time.replace(second=0, microsecond=0)
         if target < now:
             return
         self.run_at(self.start_charging, target, hour=target.hour, minute=target.minute)
 
-    def start_charging(self, kwargs):
+    def start_charging(self, kwargs: Dict[str, Any]) -> None:
         hour = kwargs.get("hour")
         minute = kwargs.get("minute")
         duration = self.args.get("charge_duration_minutes", 15)  # Default to 15 minutes if not specified
