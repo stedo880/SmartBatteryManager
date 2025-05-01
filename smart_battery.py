@@ -61,8 +61,8 @@ class SmartBatteryManager(hass.Hass):
             self.log(f"Expected solar production next hour: {solar_next_hour:.2f} kWh")
 
             # Get estimated remaining solar production for the day
-            solar_remaining_1 = self.get_state(self.args["energy_today_remaining_1"])
-            solar_remaining_2 = self.get_state(self.args["energy_today_remaining_2"])
+            solar_remaining_1 = self.get_state(self.args["energy_today_remaining_sensor_1"])
+            solar_remaining_2 = self.get_state(self.args["energy_today_remaining_sensor_2"])
             
             try:
                 solar_remaining = float(solar_remaining_1 or 0) + float(solar_remaining_2 or 0)
