@@ -21,11 +21,20 @@ class SmartBatteryManager(hass.Hass):
         try:
             now = datetime.now()
             next_interval = now.replace(second=0, microsecond=0) + timedelta(minutes=15 - now.minute % 15)
+            candidate_hours = self.get_candidate_hours()
 
             soc = self.get_current_soc()
             if soc is None:
                 return
 
+            # Charge if price is below always charge threshold
+            always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
+            energy_needed = self.calculate_energy_needed(soc, 1.0) # 100% SoC
+            if energy_needed > 0 and self.get_price_for_interval(next_interval) < always_charge_threshold:
+                self.log(f"Charging immediately: Price is below always charge threshold of {always_charge_threshold}")
+                self.schedule_charge(next_interval)
+                return
+  
             target_soc = self.get_target_soc(next_interval)
             energy_needed = self.calculate_energy_needed(soc, target_soc)
             if energy_needed <= 0:
@@ -35,7 +44,6 @@ class SmartBatteryManager(hass.Hass):
             if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
-            candidate_hours = self.get_candidate_hours()
             if self.is_next_interval_candidate(next_interval, candidate_hours):
                 self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
                 self.schedule_charge(next_interval)
@@ -104,6 +112,24 @@ class SmartBatteryManager(hass.Hass):
 
         return False
 
+    def get_price_for_interval(self, interval: datetime) -> Optional[float]:
+        price_data = self.get_state(self.args["tibber_sensor"], attribute="all")
+        if not price_data or "attributes" not in price_data:
+            self.log("No price data attributes found")
+            return None
+
+        price_data = price_data["attributes"]
+        tibber_prices = price_data.get("today", []) + price_data.get("tomorrow", [])
+        if not tibber_prices:
+            self.log("No price data available")
+            return None
+
+        for e in tibber_prices:
+            start_time = parser.isoparse(e["startsAt"]).replace(tzinfo=None)
+            if start_time == interval:
+                return float(e["total"])
+        return None
+    
     def get_candidate_hours(self) -> List[datetime]:
         price_data_full = self.get_state(self.args["tibber_sensor"], attribute="all")
         if not price_data_full or "attributes" not in price_data_full:
