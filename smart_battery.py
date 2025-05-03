@@ -206,7 +206,7 @@ class SmartBatteryManager(hass.Hass):
         target = target_time.replace(second=0, microsecond=0)
         if target < now:
             return
-        self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
+        self.log(f"Next charging scheduled: {target.strftime('%Y-%m-%d %H:%M')}")
         self.run_at(self.start_charging, target, hour=target.hour, minute=target.minute)
 
     def start_charging(self, kwargs: Dict[str, Any]) -> None:
