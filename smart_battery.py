@@ -145,6 +145,11 @@ class SmartBatteryManager(hass.Hass):
 
     def build_candidate_hours(self, local_minima: List[datetime], all_prices: List[tuple]) -> List[datetime]:
         candidate_hours = set()
+        
+        # Find mean price from all_prices
+        mean_price = sum(p[1] for p in all_prices) / len(all_prices)
+        self.log(f"Mean price: {mean_price:.2f}")
+        
         for minimum in local_minima:
             min_price = next((p for (t, p) in all_prices if t == minimum), None)
             if min_price is None:
@@ -158,8 +163,9 @@ class SmartBatteryManager(hass.Hass):
             if i is None:
                 continue
 
+            # Find the next hours with prices below the minimum price + 0.10 and below the mean price
             j = i + 1
-            while j < len(all_prices) and all_prices[j][1] <= min_price + 0.10:
+            while j < len(all_prices) and all_prices[j][1] <= min_price + 0.10 and all_prices[j][1] < mean_price:
                 candidate_hours.add(all_prices[j][0])
                 j += 1
 
