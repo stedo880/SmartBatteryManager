@@ -16,6 +16,7 @@ class SmartBatteryManager(hass.Hass):
         if first_run < now:
             first_run += timedelta(minutes=15)
         self.run_every(self.plan_charging, first_run, 900)  # 900 seconds = 15 minutes
+        self.run_in(self.plan_charging, 5)  # Initial run after 5 seconds
 
     def plan_charging(self, kwargs: Dict[str, Any]) -> None:
         try:
@@ -30,6 +31,7 @@ class SmartBatteryManager(hass.Hass):
             always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
             energy_needed = self.calculate_energy_needed(soc, 1.0) # 100% SoC
             next_interval_price = self.get_price_for_interval(next_interval)
+            self.log(f"Next interval price: {next_interval_price}")
             if next_interval_price is not None and energy_needed > 0 and next_interval_price < always_charge_threshold:
                 self.log(f"Price is below always charge threshold of {always_charge_threshold}")
                 self.schedule_charge(next_interval)
@@ -112,25 +114,7 @@ class SmartBatteryManager(hass.Hass):
 
         return False
 
-    def get_price_for_interval(self, interval: datetime) -> Optional[float]:
-        price_data = self.get_state(self.args["tibber_sensor"], attribute="all")
-        if not price_data or "attributes" not in price_data:
-            self.log("No price data attributes found")
-            return None
-
-        price_data = price_data["attributes"]
-        tibber_prices = price_data.get("today", []) + price_data.get("tomorrow", [])
-        if not tibber_prices:
-            self.log("No price data available")
-            return None
-
-        for e in tibber_prices:
-            start_time = parser.isoparse(e["startsAt"]).replace(tzinfo=None)
-            if start_time == interval:
-                return float(e["total"])
-        return None
-    
-    def get_candidate_hours(self) -> List[datetime]:
+    def get_all_prices(self) -> List[tuple]:
         price_data_full = self.get_state(self.args["tibber_sensor"], attribute="all")
         if not price_data_full or "attributes" not in price_data_full:
             self.log("No price data attributes found")
@@ -142,10 +126,25 @@ class SmartBatteryManager(hass.Hass):
             self.log("No price data available")
             return []
 
-        all_prices = [
+        return [
             (parser.isoparse(e["startsAt"]).replace(tzinfo=None), float(e["total"]))
             for e in tibber_prices
         ]
+
+    def get_price_for_interval(self, interval: datetime) -> Optional[float]:
+        all_prices = self.get_all_prices()
+        for start_time, price in all_prices:
+            if start_time == interval:
+                return price
+        self.log(f"No price found for interval: {interval}")
+        return None
+    
+    def get_candidate_hours(self) -> List[datetime]:
+        all_prices = self.get_all_prices()
+        if not all_prices:
+            self.log("No prices available to calculate candidate hours")
+            return []
+        
         all_prices.sort(key=lambda x: x[0])
 
         smoothed = self.smooth_prices([p for (_, p) in all_prices])
