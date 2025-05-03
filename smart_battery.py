@@ -31,13 +31,12 @@ class SmartBatteryManager(hass.Hass):
             always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
             energy_needed = self.calculate_energy_needed(soc, 1.0) # 100% SoC
             next_interval_price = self.get_price_for_interval(next_interval)
-            self.log(f"Next interval price: {next_interval_price}")
             if next_interval_price is not None and energy_needed > 0 and next_interval_price < always_charge_threshold:
-                self.log(f"Price is below always charge threshold of {always_charge_threshold}")
+                self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold}")
                 self.schedule_charge(next_interval)
                 return
             else:
-                self.log(f"Price is above always charge threshold of {always_charge_threshold}")
+                self.log(f"Next interval price: {next_interval_price:.2f} is above always charge threshold of {always_charge_threshold}")
   
             target_soc = self.get_target_soc(next_interval)
             energy_needed = self.calculate_energy_needed(soc, target_soc)
@@ -136,8 +135,10 @@ class SmartBatteryManager(hass.Hass):
     def get_price_for_interval(self, interval: datetime) -> Optional[float]:
         all_prices = self.get_all_prices()
         for start_time, price in all_prices:
-            if start_time == interval:
+            # Match only the date and hour, ignoring the minutes
+            if start_time.date() == interval.date() and start_time.hour == interval.hour:
                 return price
+
         self.log(f"No price found for interval: {interval}")
         return None
     
