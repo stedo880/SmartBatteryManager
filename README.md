@@ -64,6 +64,7 @@ smart_battery:
   battery_capacity_kwh: 10
   charge_duration_minutes: 15
   charge_power_w: 3000
+  always_charge_threshold: 0.05
   soc_targets:
     - 0.50  # 00:00
     - 0.50  # 01:00
