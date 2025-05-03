@@ -30,22 +30,17 @@ class SmartBatteryManager(hass.Hass):
             always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
             energy_needed = self.calculate_energy_needed(soc, 1.0) # 100% SoC
             if energy_needed > 0 and self.get_price_for_interval(next_interval) < always_charge_threshold:
-                self.log(f"Charging immediately: Price is below always charge threshold of {always_charge_threshold}")
+                self.log(f"Price is below always charge threshold of {always_charge_threshold}")
                 self.schedule_charge(next_interval)
                 return
   
             target_soc = self.get_target_soc(next_interval)
-            energy_needed = self.calculate_energy_needed(soc, target_soc)
-            if energy_needed <= 0:
-                self.log("Skipping charge: No additional energy needed")
-                return
-
+            energy_needed = self.calculate_energy_needed(soc, target_soc)          
             if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
             candidate_hours = self.get_candidate_hours()
             if self.is_next_interval_candidate(next_interval, candidate_hours):
-                self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
                 self.schedule_charge(next_interval)
             else:
                 self.log("Skipping charge: Next interval is not a candidate for charging")
@@ -94,6 +89,10 @@ class SmartBatteryManager(hass.Hass):
             return 0
 
     def check_skip_charge(self, soc: float, target_soc: float, energy_needed: float) -> bool:
+        if energy_needed <= 0:
+           self.log("Skipping charge: No additional energy needed")
+           return True
+
         solar_next_hour = self.get_solar_next_hour()
         solar_remaining = self.get_solar_remaining()
 
@@ -207,6 +206,7 @@ class SmartBatteryManager(hass.Hass):
         target = target_time.replace(second=0, microsecond=0)
         if target < now:
             return
+        self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
         self.run_at(self.start_charging, target, hour=target.hour, minute=target.minute)
 
     def start_charging(self, kwargs: Dict[str, Any]) -> None:
