@@ -21,7 +21,6 @@ class SmartBatteryManager(hass.Hass):
         try:
             now = datetime.now()
             next_interval = now.replace(second=0, microsecond=0) + timedelta(minutes=15 - now.minute % 15)
-            candidate_hours = self.get_candidate_hours()
 
             soc = self.get_current_soc()
             if soc is None:
@@ -44,6 +43,7 @@ class SmartBatteryManager(hass.Hass):
             if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
+            candidate_hours = self.get_candidate_hours()
             if self.is_next_interval_candidate(next_interval, candidate_hours):
                 self.log(f"Next charging scheduled: {next_interval.strftime('%Y-%m-%d %H:%M')}")
                 self.schedule_charge(next_interval)
