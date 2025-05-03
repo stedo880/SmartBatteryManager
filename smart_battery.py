@@ -36,6 +36,8 @@ class SmartBatteryManager(hass.Hass):
                 self.log(f"Price is below always charge threshold of {always_charge_threshold}")
                 self.schedule_charge(next_interval)
                 return
+            else:
+                self.log(f"Price is above always charge threshold of {always_charge_threshold}")
   
             target_soc = self.get_target_soc(next_interval)
             energy_needed = self.calculate_energy_needed(soc, target_soc)
