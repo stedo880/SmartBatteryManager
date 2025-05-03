@@ -38,7 +38,8 @@ class SmartBatteryManager(hass.Hass):
                 return
   
             target_soc = self.get_target_soc(next_interval)
-            energy_needed = self.calculate_energy_needed(soc, target_soc)          
+            energy_needed = self.calculate_energy_needed(soc, target_soc)
+            self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")         
             if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
@@ -70,7 +71,6 @@ class SmartBatteryManager(hass.Hass):
     def calculate_energy_needed(self, soc: float, target_soc: float) -> float:
         battery_capacity = self.args.get("battery_capacity_kwh", 10)
         energy_needed = max(0, (target_soc - soc) * battery_capacity)
-        self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")
         return energy_needed
 
     def get_solar_next_hour(self) -> float:
