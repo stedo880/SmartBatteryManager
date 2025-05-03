@@ -191,11 +191,17 @@ class SmartBatteryManager(hass.Hass):
             if i is None:
                 continue
 
-            # Find the next hours with prices below the minimum price + 0.10 and below the mean price
+            # Find future hours with prices below the minimum price + 0.10 and below the mean price
             j = i + 1
             while j < len(all_prices) and all_prices[j][1] <= min_price + 0.10 and all_prices[j][1] < mean_price:
                 candidate_hours.add(all_prices[j][0])
                 j += 1
+
+            # Find past hours with prices below the minimum price + 0.10 and below the mean price
+            j = i - 1
+            while j >= 0 and all_prices[j][1] <= min_price + 0.10 and all_prices[j][1] < mean_price:
+                candidate_hours.add(all_prices[j][0])
+                j -= 1
 
         candidate_hours = sorted(candidate_hours)
         self.log(f"Candidate hours: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in candidate_hours)}")
