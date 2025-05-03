@@ -25,7 +25,7 @@ The `SmartBatteryManager` operates by continuously monitoring and analyzing data
 
 5. **Smoothing and Local Minima Detection**: The app applies a 3-hour smoothing window to electricity price data to reduce noise and identify trends. Local minima in the smoothed price data are detected to pinpoint the most cost-effective charging times.
 
-6. **Left-Right Seek for Adjacent Low Prices**: After identifying local minima, the app extends the candidate charging hours by seeking adjacent time periods where the price is within a threshold (`+0.10`) of the minimum price. This ensures that slightly higher but still cost-effective periods are included in the charging plan.
+6. **Right Seek for Adjacent Low Prices**: After identifying local minima, the app extends the candidate charging hours by seeking adjacent time periods where the price is within a threshold (`+0.10`) of the minimum price and below the average price. This ensures that slightly higher but still cost-effective periods are included in the charging plan.
 
 7. **Dynamic Scheduling**: Based on the SoC, solar forecast, and electricity prices, the app dynamically adjusts the charging schedule. It ensures that charging occurs during optimal times to minimize costs and maximize renewable energy usage.
 
