@@ -184,6 +184,9 @@ class SmartBatteryManager(hass.Hass):
             if min_price is None:
                 continue
 
+            # Explicitly add the local minimum to candidate hours
+            candidate_hours.add(minimum)
+
             # Search left (past hours)
             for t, p in reversed(all_prices):
                 if t < minimum and p <= min_price + 0.10 and p < mean_price:
