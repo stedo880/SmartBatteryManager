@@ -173,35 +173,30 @@ class SmartBatteryManager(hass.Hass):
 
     def build_candidate_hours(self, local_minima: List[datetime], all_prices: List[tuple]) -> List[datetime]:
         candidate_hours = set()
-        
+
         # Find mean price from all_prices
         mean_price = sum(p[1] for p in all_prices) / len(all_prices)
         self.log(f"Mean price: {mean_price:.2f}")
-        
+
         for minimum in local_minima:
+            # Get the price of the local minimum
             min_price = next((p for (t, p) in all_prices if t == minimum), None)
             if min_price is None:
                 continue
 
-            window = [tp for tp in all_prices if abs((tp[0] - minimum).total_seconds()) / 3600 <= 2]
-            cheapest_three = sorted(window, key=lambda x: x[1])[:3]
-            candidate_hours.update(t[0] for t in cheapest_three)
+            # Search left (past hours)
+            for t, p in reversed(all_prices):
+                if t < minimum and p <= min_price + 0.10 and p < mean_price:
+                    candidate_hours.add(t)
+                elif t < minimum:
+                    break  # Stop if the price is no longer below the threshold
 
-            i = next((idx for idx, (t, _) in enumerate(all_prices) if t == minimum), None)
-            if i is None:
-                continue
-
-            # Find future hours with prices below the minimum price + 0.10 and below the mean price
-            j = i + 1
-            while j < len(all_prices) and all_prices[j][1] <= min_price + 0.10 and all_prices[j][1] < mean_price:
-                candidate_hours.add(all_prices[j][0])
-                j += 1
-
-            # Find past hours with prices below the minimum price + 0.10 and below the mean price
-            j = i - 1
-            while j >= 0 and all_prices[j][1] <= min_price + 0.10 and all_prices[j][1] < mean_price:
-                candidate_hours.add(all_prices[j][0])
-                j -= 1
+            # Search right (future hours)
+            for t, p in all_prices:
+                if t > minimum and p <= min_price + 0.10 and p < mean_price:
+                    candidate_hours.add(t)
+                elif t > minimum:
+                    break  # Stop if the price is no longer below the threshold
 
         candidate_hours = sorted(candidate_hours)
         self.log(f"Candidate hours: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in candidate_hours)}")
