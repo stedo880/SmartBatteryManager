@@ -27,11 +27,15 @@ class SmartBatteryManager(hass.Hass):
             if soc is None:
                 return
 
+            # Check if battery is fully charged
+            if soc >= 1.0:
+                self.log("Battery is fully charged, no need to charge")
+                return
+
             # Charge if price is below always charge threshold
             always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
-            energy_needed = self.calculate_energy_needed(soc, 1.0) # 100% SoC
             next_interval_price = self.get_price_for_interval(next_interval)
-            if next_interval_price is not None and energy_needed > 0 and next_interval_price < always_charge_threshold:
+            if next_interval_price is not None and next_interval_price < always_charge_threshold:
                 self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold}")
                 self.schedule_charge(next_interval)
                 return
