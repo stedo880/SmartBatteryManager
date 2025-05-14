@@ -154,23 +154,13 @@ class SmartBatteryManager(hass.Hass):
         
         all_prices.sort(key=lambda x: x[0])
 
-        smoothed = self.smooth_prices([p for (_, p) in all_prices])
-        local_minima = self.find_local_minima(smoothed, all_prices)
+        local_minima = self.find_local_minima(all_prices)
         return self.build_candidate_hours(local_minima, all_prices)
 
-    def smooth_prices(self, prices: List[float]) -> List[float]:
-        smoothed = []
-        window = 3  # 3×1 hour smoothing
-        for i in range(len(prices)):
-            lo = max(0, i - window // 2)
-            hi = min(len(prices), i + window // 2 + 1)
-            smoothed.append(sum(prices[lo:hi]) / (hi - lo))
-        return smoothed
-
-    def find_local_minima(self, smoothed: List[float], all_prices: List[tuple]) -> List[datetime]:
+    def find_local_minima(self, all_prices: List[tuple]) -> List[datetime]:
         local_minima = []
-        for i in range(1, len(smoothed) - 1):
-            if smoothed[i] < smoothed[i - 1] and smoothed[i] < smoothed[i + 1]:
+        for i in range(1, len(all_prices) - 1):
+            if all_prices[i][1] < all_prices[i - 1][1] and all_prices[i][1] < all_prices[i + 1][1]:
                 local_minima.append(all_prices[i][0])
         self.log(f"Detected local minima: {', '.join(t.strftime('%Y-%m-%d %H:%M') for t in local_minima)}")
         return local_minima
