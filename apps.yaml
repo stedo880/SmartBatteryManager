@@ -11,6 +11,7 @@ smart_battery:
   charge_duration_minutes: 15
   charge_power_w: 3000
   always_charge_threshold: 0.06 # SEK = 6 öre
+  always_charge_factor: 0.1 # 10% of mean price
   soc_targets:
     - 0.30  # 00:00
     - 0.30  # 01:00
