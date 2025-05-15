@@ -66,11 +66,11 @@ class SmartBatteryManager(hass.Hass):
 
         next_interval_price = self.get_price_for_interval(next_interval)
         if next_interval_price is not None and next_interval_price < always_charge_threshold:
-            self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold}")
+            self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold:.2f}")
             self.schedule_charge(next_interval)
             return True
         else:
-            self.log(f"Next interval price: {next_interval_price:.2f} is above always charge threshold of {always_charge_threshold}")
+            self.log(f"Next interval price: {next_interval_price:.2f} is above always charge threshold of {always_charge_threshold:.2f}")
             return False
 
     def get_mean_price(self) -> float:
