@@ -23,6 +23,7 @@ class SmartBatteryManager(hass.Hass):
             now = datetime.now()
             next_interval = now.replace(second=0, microsecond=0) + timedelta(minutes=15 - now.minute % 15)
 
+            # Get battery state of charge (SoC)
             soc = self.get_current_soc()
             if soc is None:
                 return
@@ -33,21 +34,17 @@ class SmartBatteryManager(hass.Hass):
                 return
 
             # Charge if price is below always charge threshold
-            always_charge_threshold = self.args.get("always_charge_threshold", 0.0)
-            next_interval_price = self.get_price_for_interval(next_interval)
-            if next_interval_price is not None and next_interval_price < always_charge_threshold:
-                self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold}")
-                self.schedule_charge(next_interval)
+            if self.check_always_charge(next_interval):
                 return
-            else:
-                self.log(f"Next interval price: {next_interval_price:.2f} is above always charge threshold of {always_charge_threshold}")
   
+            # Check if we need to charge based on solar production
             target_soc = self.get_target_soc(next_interval)
             energy_needed = self.calculate_energy_needed(soc, target_soc)
             self.log(f"Current battery SoC: {soc*100:.0f}%, energy needed from grid: {energy_needed:.2f} kWh")         
             if self.check_skip_charge(soc, target_soc, energy_needed):
                 return
 
+            # Check if the next interval is a candidate for charging
             candidate_hours = self.get_candidate_hours()
             if self.is_next_interval_candidate(next_interval, candidate_hours):
                 self.schedule_charge(next_interval)
@@ -57,6 +54,34 @@ class SmartBatteryManager(hass.Hass):
         except Exception as e:
             self.log(f"Error during planning: {str(e)}")
 
+    def check_always_charge(self, next_interval: datetime) -> bool:
+        mean_price = self.get_mean_price()
+        always_charge_factor = self.args.get("always_charge_factor", 0.0)
+        always_charge_threshold = mean_price * always_charge_factor
+        if always_charge_factor <= 0:
+            self.log("Always charge factor is 0 or negative, skipping always charge check")
+            always_charge_threshold = float('inf')
+        else:
+            self.log(f"Always charge threshold: {always_charge_threshold:.2f}")
+
+        next_interval_price = self.get_price_for_interval(next_interval)
+        if next_interval_price is not None and next_interval_price < always_charge_threshold:
+            self.log(f"Next interval price: {next_interval_price:.2f} is below always charge threshold of {always_charge_threshold}")
+            self.schedule_charge(next_interval)
+            return True
+        else:
+            self.log(f"Next interval price: {next_interval_price:.2f} is above always charge threshold of {always_charge_threshold}")
+            return False
+
+    def get_mean_price(self) -> float:
+        all_prices = self.get_all_prices()
+        if not all_prices:
+            self.log("No price data available")
+            return 0.0
+        mean_price = sum(p[1] for p in all_prices) / len(all_prices)
+        self.log(f"Mean price: {mean_price:.2f}")
+        return mean_price
+    
     def get_current_soc(self) -> Optional[float]:
         soc_raw = self.get_state(self.args["soc_sensor"])
         if soc_raw is None or soc_raw in ["unknown", "unavailable"]:
@@ -170,7 +195,6 @@ class SmartBatteryManager(hass.Hass):
 
         # Find mean price from all_prices
         mean_price = sum(p[1] for p in all_prices) / len(all_prices)
-        self.log(f"Mean price: {mean_price:.2f}")
 
         for minimum in local_minima:
             # Get the price of the local minimum
