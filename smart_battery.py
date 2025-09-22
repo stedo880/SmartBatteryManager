@@ -78,8 +78,14 @@ class SmartBatteryManager(hass.Hass):
         if not all_prices:
             self.log("No price data available")
             return 0.0
-        mean_price = sum(p[1] for p in all_prices) / len(all_prices)
-        self.log(f"Mean price: {mean_price:.2f}")
+        now = datetime.now()
+        # Only consider prices from now onwards
+        future_prices = [p[1] for p in all_prices if p[0] >= now]
+        if not future_prices:
+            self.log("No future price data available")
+            return 0.0
+        mean_price = sum(future_prices) / len(future_prices)
+        self.log(f"Mean price (current and future): {mean_price:.2f}")
         return mean_price
     
     def get_current_soc(self) -> Optional[float]:
